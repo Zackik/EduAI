@@ -1,0 +1,6 @@
+{
+  "name": "EduAI CS Prep",
+  "description": "Hệ thống AI quản lý học tập và luyện thi Khoa học Máy tính & CNTT",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

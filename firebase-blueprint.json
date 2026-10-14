@@ -1,0 +1,170 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Student user profile information with XP and streak records",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Google Auth UID of the student" },
+        "displayName": { "type": "string", "description": "Display name of student" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "major": { "type": "string", "description": "Academic major e.g. Computer Science" },
+        "yearOfStudy": { "type": "integer", "description": "Year of university study" },
+        "totalXp": { "type": "integer", "description": "Total accumulated study XP" },
+        "streakDays": { "type": "integer", "description": "Daily study attendance streak in days" },
+        "lastActiveDate": { "type": "string", "description": "ISO date string of last active check-in" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp via serverTimestamp" }
+      },
+      "required": ["userId", "displayName", "email", "major", "createdAt"]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "Personalized study plan created for CS exam preparation",
+      "type": "object",
+      "properties": {
+        "planId": { "type": "string", "description": "Unique identifier of the study plan" },
+        "userId": { "type": "string", "description": "Owner student UID" },
+        "title": { "type": "string", "description": "Plan title or subject goal" },
+        "subject": { "type": "string", "description": "Subject category e.g. Data Structures, OS, Web" },
+        "targetExamDate": { "type": "string", "description": "Target exam date formatted YYYY-MM-DD" },
+        "dailyMinutes": { "type": "integer", "description": "Target daily study time in minutes" },
+        "progressPercent": { "type": "integer", "description": "Overall plan completion percentage 0-100" },
+        "status": { "type": "string", "enum": ["active", "completed", "archived"], "description": "Current status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["planId", "userId", "title", "subject", "createdAt"]
+    },
+    "StudySession": {
+      "title": "StudySession",
+      "description": "Log of focused study attendance or pomodoro session",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "Unique session log identifier" },
+        "userId": { "type": "string", "description": "Owner student UID" },
+        "subject": { "type": "string", "description": "Subject studied" },
+        "durationMinutes": { "type": "integer", "description": "Duration spent studying" },
+        "date": { "type": "string", "description": "Date of study session YYYY-MM-DD" },
+        "notes": { "type": "string", "description": "Notes or summary of learned concepts" },
+        "isCompleted": { "type": "boolean", "description": "Whether session was successfully concluded" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["sessionId", "userId", "subject", "durationMinutes", "createdAt"]
+    },
+    "ExamResult": {
+      "title": "ExamResult",
+      "description": "Record of a completed mock exam simulator test",
+      "type": "object",
+      "properties": {
+        "resultId": { "type": "string", "description": "Result document ID" },
+        "userId": { "type": "string", "description": "Student UID who took the exam" },
+        "examId": { "type": "string", "description": "ID of mock exam template" },
+        "examTitle": { "type": "string", "description": "Title of mock exam" },
+        "subject": { "type": "string", "description": "Subject tested" },
+        "score": { "type": "integer", "description": "Calculated score 0-100" },
+        "totalQuestions": { "type": "integer", "description": "Total count of questions" },
+        "correctAnswers": { "type": "integer", "description": "Count of correctly answered questions" },
+        "timeSpentSeconds": { "type": "integer", "description": "Time elapsed taking exam in seconds" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when result was logged" }
+      },
+      "required": ["resultId", "userId", "examId", "examTitle", "subject", "score", "totalQuestions", "correctAnswers", "createdAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public leaderboard entry for competitive student rankings",
+      "type": "object",
+      "properties": {
+        "entryId": { "type": "string", "description": "Entry document identifier (equal to student userId)" },
+        "userId": { "type": "string", "description": "Student UID" },
+        "displayName": { "type": "string", "description": "Student display name" },
+        "major": { "type": "string", "description": "University major" },
+        "totalXp": { "type": "integer", "description": "Total earned XP points" },
+        "rankTier": { "type": "string", "description": "Rank badge e.g. Bronze, Silver, Gold, Platinum, Diamond" },
+        "streakDays": { "type": "integer", "description": "Current active attendance streak" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated timestamp" }
+      },
+      "required": ["entryId", "userId", "displayName", "totalXp", "updatedAt"]
+    },
+    "StudyGroup": {
+      "title": "StudyGroup",
+      "description": "Collaborative study group for peer discussion and schedule sharing",
+      "type": "object",
+      "properties": {
+        "groupId": { "type": "string", "description": "Group document identifier" },
+        "name": { "type": "string", "description": "Name of study group" },
+        "subject": { "type": "string", "description": "Subject or track of the group" },
+        "description": { "type": "string", "description": "Description and learning goals" },
+        "memberUids": { "type": "array", "description": "List of member student UIDs" },
+        "createdBy": { "type": "string", "description": "UID of founder student" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["groupId", "name", "subject", "memberUids", "createdBy", "createdAt"]
+    },
+    "GroupMessage": {
+      "title": "GroupMessage",
+      "description": "Chat message sent in a study group discussion channel",
+      "type": "object",
+      "properties": {
+        "messageId": { "type": "string", "description": "Message document ID" },
+        "groupId": { "type": "string", "description": "Study group ID" },
+        "senderId": { "type": "string", "description": "UID of sender" },
+        "senderName": { "type": "string", "description": "Display name of sender" },
+        "content": { "type": "string", "description": "Text content of message" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp sent" }
+      },
+      "required": ["messageId", "groupId", "senderId", "senderName", "content", "createdAt"]
+    },
+    "StudyMaterial": {
+      "title": "StudyMaterial",
+      "description": "Curated CS knowledge article, cheat sheet, or code template",
+      "type": "object",
+      "properties": {
+        "materialId": { "type": "string", "description": "Material document ID" },
+        "title": { "type": "string", "description": "Title of article or cheat sheet" },
+        "subject": { "type": "string", "description": "Subject category e.g. Algorithms, OS, Databases" },
+        "category": { "type": "string", "description": "Type of resource e.g. Theory, CheatSheet, Code" },
+        "summary": { "type": "string", "description": "Brief description of material" },
+        "content": { "type": "string", "description": "Full markdown or structured text content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["materialId", "title", "subject", "category", "summary", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile documents"
+    },
+    "/users/{userId}/plans/{planId}": {
+      "schema": { "$ref": "#/entities/StudyPlan" },
+      "description": "User personalized study plans"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/StudySession" },
+      "description": "Study attendance and focus session records"
+    },
+    "/users/{userId}/exam_results/{resultId}": {
+      "schema": { "$ref": "#/entities/ExamResult" },
+      "description": "Historical mock exam attempts and score breakdowns"
+    },
+    "/leaderboard/{entryId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Public competitive leaderboard entries synced by students"
+    },
+    "/study_groups/{groupId}": {
+      "schema": { "$ref": "#/entities/StudyGroup" },
+      "description": "Peer study group rooms"
+    },
+    "/study_groups/{groupId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/GroupMessage" },
+      "description": "Study group chat messages"
+    },
+    "/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/StudyMaterial" },
+      "description": "Knowledge library and cheat sheet reference materials"
+    }
+  }
+}

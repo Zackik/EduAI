@@ -1,0 +1,228 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == "buithanh3786900@gmail.com" && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Helpers
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.major is string && data.major.size() > 0 && data.major.size() <= 100 &&
+             (!('yearOfStudy' in data) || data.yearOfStudy is int) &&
+             (!('totalXp' in data) || (data.totalXp is int && data.totalXp >= 0)) &&
+             (!('streakDays' in data) || (data.streakDays is int && data.streakDays >= 0)) &&
+             (!('lastActiveDate' in data) || (data.lastActiveDate is string && data.lastActiveDate.size() <= 30)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidStudyPlan(data) {
+      return data.planId is string && data.planId.size() > 0 && data.planId.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             (!('targetExamDate' in data) || (data.targetExamDate is string && data.targetExamDate.size() <= 20)) &&
+             (!('dailyMinutes' in data) || (data.dailyMinutes is int && data.dailyMinutes >= 0 && data.dailyMinutes <= 1440)) &&
+             (!('progressPercent' in data) || (data.progressPercent is int && data.progressPercent >= 0 && data.progressPercent <= 100)) &&
+             (!('status' in data) || (data.status is string && (data.status == 'active' || data.status == 'completed' || data.status == 'archived'))) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidStudySession(data) {
+      return data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             data.durationMinutes is int && data.durationMinutes >= 1 && data.durationMinutes <= 1440 &&
+             (!('date' in data) || (data.date is string && data.date.size() <= 20)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+             (!('isCompleted' in data) || data.isCompleted is bool) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidExamResult(data) {
+      return data.resultId is string && data.resultId.size() > 0 && data.resultId.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.examId is string && data.examId.size() > 0 && data.examId.size() <= 128 &&
+             data.examTitle is string && data.examTitle.size() > 0 && data.examTitle.size() <= 200 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             data.score is int && data.score >= 0 && data.score <= 100 &&
+             data.totalQuestions is int && data.totalQuestions > 0 && data.totalQuestions <= 200 &&
+             data.correctAnswers is int && data.correctAnswers >= 0 && data.correctAnswers <= data.totalQuestions &&
+             (!('timeSpentSeconds' in data) || (data.timeSpentSeconds is int && data.timeSpentSeconds >= 0)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.entryId is string && data.entryId.size() > 0 && data.entryId.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             (!('major' in data) || (data.major is string && data.major.size() <= 100)) &&
+             data.totalXp is int && data.totalXp >= 0 &&
+             (!('rankTier' in data) || (data.rankTier is string && data.rankTier.size() <= 50)) &&
+             (!('streakDays' in data) || (data.streakDays is int && data.streakDays >= 0)) &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidStudyGroup(data) {
+      return data.groupId is string && data.groupId.size() > 0 && data.groupId.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             data.memberUids is list && data.memberUids.size() <= 100 &&
+             (data.memberUids.size() == 0 || data.memberUids[0] is string) &&
+             data.createdBy is string && data.createdBy.size() > 0 && data.createdBy.size() <= 128 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidGroupMessage(data) {
+      return data.messageId is string && data.messageId.size() > 0 && data.messageId.size() <= 128 &&
+             data.groupId is string && data.groupId.size() > 0 && data.groupId.size() <= 128 &&
+             data.senderId is string && data.senderId.size() > 0 && data.senderId.size() <= 128 &&
+             data.senderName is string && data.senderName.size() > 0 && data.senderName.size() <= 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 3000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidStudyMaterial(data) {
+      return data.materialId is string && data.materialId.size() > 0 && data.materialId.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 50 &&
+             data.summary is string && data.summary.size() > 0 && data.summary.size() <= 500 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 50000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == userId &&
+                       incoming().createdAt is timestamp &&
+                       isValidUserProfile(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming());
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      // Subcollection: Study Plans
+      match /plans/{planId} {
+        allow get, list: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         isValidStudyPlan(incoming());
+        allow update: if isSignedIn() && request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidStudyPlan(incoming());
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Subcollection: Study Sessions
+      match /sessions/{sessionId} {
+        allow get, list: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         isValidStudySession(incoming());
+        allow update: if isSignedIn() && request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidStudySession(incoming());
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Subcollection: Exam Results
+      match /exam_results/{resultId} {
+        allow get, list: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         isValidExamResult(incoming());
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Leaderboard
+    match /leaderboard/{entryId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == entryId &&
+                       incoming().userId == entryId &&
+                       isValidLeaderboardEntry(incoming());
+      allow update: if isSignedIn() && request.auth.uid == entryId &&
+                       incoming().userId == entryId &&
+                       isValidLeaderboardEntry(incoming());
+      allow delete: if isSignedIn() && (request.auth.uid == entryId || isAdmin());
+    }
+
+    // 3. Study Groups
+    match /study_groups/{groupId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+                       incoming().createdBy == request.auth.uid &&
+                       request.auth.uid in incoming().memberUids &&
+                       isValidStudyGroup(incoming());
+      allow update: if isSignedIn() &&
+                       (request.auth.uid in existing().memberUids || existing().createdBy == request.auth.uid || isAdmin()) &&
+                       incoming().createdBy == existing().createdBy &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidStudyGroup(incoming());
+      allow delete: if isSignedIn() && (existing().createdBy == request.auth.uid || isAdmin());
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() &&
+                            request.auth.uid in get(/databases/$(database)/documents/study_groups/$(groupId)).data.memberUids;
+        allow create: if isSignedIn() &&
+                         request.auth.uid in get(/databases/$(database)/documents/study_groups/$(groupId)).data.memberUids &&
+                         incoming().senderId == request.auth.uid &&
+                         incoming().groupId == groupId &&
+                         isValidGroupMessage(incoming());
+        allow delete: if isSignedIn() && (resource.data.senderId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // 4. Curated Study Materials
+    match /materials/{materialId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 5. Admins Collection
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+  }
+}
